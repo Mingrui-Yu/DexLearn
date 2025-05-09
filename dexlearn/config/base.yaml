@@ -1,0 +1,46 @@
+output_folder: output
+data_folder: assets
+exp_folder: experiment
+exp_name: ${algo_name}
+ckpt:       # ckpt path to load
+resume: true
+
+seed: 0
+device: 'cuda:0'
+
+
+
+##########################
+# other config yamls
+##########################
+
+defaults:
+  - _self_
+  - hand: shadow
+  - algo: obj_diffusion
+  - data: tabletop
+
+data_name: ${hydra:runtime.choices.data}
+algo_name: ${hydra:runtime.choices.algo}
+hand_name: ${hydra:runtime.choices.hand}
+
+hydra:
+  run:
+    dir: ${...output_folder}/${...exp_folder}/${...hand_name}_${...data_name}_${...exp_name}
+    
+
+##########################
+# wandb logging
+##########################
+wandb:
+  folder: ${output_folder}
+  group: ${hand_name}_${data_name}
+  id: ${hand_name}_${data_name}_${exp_name}
+  mode: online
+  project: dexgrasp
+  resume: ${resume}
+
+
+
+
+

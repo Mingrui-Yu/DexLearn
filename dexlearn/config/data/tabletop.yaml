@@ -1,0 +1,22 @@
+num_workers: 16
+
+grasp_split_num: 1
+obj_split_num: 1
+num_points: 1024
+sort_grasps: False
+num_grasps: 1
+traj_length: 2
+traj_delta: False
+pose_aug: True
+
+test_post_process_use_obj_pose: False
+
+dataset_name: TabletopGraspDataset
+grasp_path: /mnt/disk1/jiayichen/code/DexGraspBench/output/rss_BODex_shadow/succgrasp
+object_path: ${data_folder}/object/DGN_obj/processed_data
+pc_path: ${data_folder}/object/DGN_obj/vision_data
+
+split_path: ${data_folder}/object/DGN_obj/valid_split
+test_split: test
+mini_test: True
+model_name: ${algo.model.backbone}

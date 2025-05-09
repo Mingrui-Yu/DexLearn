@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dexlearn"
+description = "Learning-based grasp synthesis for dexterous hands"
+version = "0.1"
+authors = [{name = "Jiayi Chen", email = "jiayichen@pku.edu.cn"}]
+dependencies = [
+    "numpy==1.26.4",
+]
+
+[project.optional-dependencies]
+cuda = ["pytorch>=2.0.1"]
+
+[tool.setuptools]
+packages = ["dexonomy"]
