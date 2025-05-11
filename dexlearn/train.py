@@ -8,10 +8,10 @@ from omegaconf import DictConfig
 from tqdm import trange
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from dexgrasp.utils.logger import Logger
-from dexgrasp.utils.util import set_seed
-from dexgrasp.dataset import create_train_dataloader
-from dexgrasp.network.models import get_model
+from dexlearn.utils.logger import Logger
+from dexlearn.utils.util import set_seed
+from dexlearn.dataset import create_train_dataloader
+from dexlearn.network.models import *
 
 
 @hydra.main(config_path="config", config_name="base", version_base=None)
@@ -20,8 +20,9 @@ def main(config: DictConfig) -> None:
     logger = Logger(config)
     train_loader, val_loader = create_train_dataloader(config)
 
-    model = get_model(config.algo.model)
-    optimizer = torch.optim.Adam(
+    model = eval(config.algo.model.name)(config.algo.model)
+
+    optimizer = torch.optim.AdamW(
         [p for p in model.parameters() if p.requires_grad], lr=config.algo.lr
     )
     scheduler = CosineAnnealingLR(
@@ -48,7 +49,13 @@ def main(config: DictConfig) -> None:
     for it in trange(cur_iter, config.algo.max_iter):
         optimizer.zero_grad()
         data = train_loader.get()
-        loss, result_dict = model(data)
+        result_dict = model(data)
+        loss = 0
+        for k, v in result_dict.items():
+            if k in config.algo.loss_weight:
+                loss += config.algo.loss_weight[k] * v
+            elif "loss" in k:
+                print(f"{k} is not used in loss!")
         loss.backward()
         debug_flag = False
         for p in model.parameters():
@@ -66,6 +73,8 @@ def main(config: DictConfig) -> None:
         if debug_flag:
             print("grad is nan!")
         torch.nn.utils.clip_grad_norm_(model.parameters(), config.algo.grad_clip)
+        if it == 0:
+            continue
         optimizer.step()
         scheduler.step()
 
@@ -91,7 +100,7 @@ def main(config: DictConfig) -> None:
                 result_dicts = []
                 for _ in range(config.algo.val_num):
                     data = val_loader.get()
-                    loss, result_dict = model(data)
+                    result_dict = model(data)
                     result_dicts.append(result_dict)
                 logger.log(
                     {

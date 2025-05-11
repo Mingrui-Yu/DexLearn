@@ -1,9 +1,9 @@
 import torch
 from einops import rearrange, repeat
 
-from .flow_util import Flow
+from .nflow_util import Flow
 from .mlp import BasicMLP
-from dexgrasp.utils.rot import proper_svd
+from dexlearn.utils.rot import proper_svd
 from pytorch3d import transforms as pttf
 
 

@@ -1,17 +1,38 @@
+import torch.utils
 from torch.utils.data import DataLoader
+import torch.utils.data
 from torch.utils.data._utils.collate import default_collate
-from omegaconf import DictConfig
+from omegaconf import DictConfig, ListConfig
 import MinkowskiEngine as ME
 import torch
+from copy import deepcopy
 
-from .floating import FloatingGraspDataset
-from .tabletop import TabletopGraspDataset
-from .conditional import TypeCondGraspDataset
+from .dexonomy import DexonomyDataset
+
+
+def create_dataset(config, mode):
+    sp_voxel_size = (
+        config.algo.model.backbone.voxel_size
+        if "MinkUNet" in config.algo.model.backbone.name
+        else None
+    )
+    if isinstance(config.data.object_path, ListConfig):
+        dataset_lst = []
+        for p in config.data.object_path:
+            new_data_config = deepcopy(config.data)
+            new_data_config.object_path = p
+            dataset_lst.append(
+                eval(f"{config.data_name}Dataset")(new_data_config, mode, sp_voxel_size)
+            )
+        dataset = torch.utils.data.ConcatDataset(dataset_lst)
+    else:
+        dataset = eval(f"{config.data_name}Dataset")(config.data, mode, sp_voxel_size)
+    return dataset
 
 
 def create_train_dataloader(config: DictConfig):
-    train_dataset = eval(config.data.dataset_name)(config, mode="train")
-    val_datasets = eval(config.data.dataset_name)(config, mode="eval")
+    train_dataset = create_dataset(config, mode="train")
+    val_dataset = create_dataset(config, mode="eval")
 
     train_loader = InfLoader(
         DataLoader(
@@ -26,7 +47,7 @@ def create_train_dataloader(config: DictConfig):
     )
     val_loader = InfLoader(
         DataLoader(
-            val_datasets,
+            val_dataset,
             batch_size=config.algo.batch_size,
             drop_last=True,
             num_workers=config.data.num_workers,
@@ -39,10 +60,10 @@ def create_train_dataloader(config: DictConfig):
 
 
 def create_test_dataloader(config: DictConfig, mode="test"):
-    test_datasets = eval(config.data.dataset_name)(config, mode=mode)
+    test_dataset = create_dataset(config, mode=mode)
     test_loader = FiniteLoader(
         DataLoader(
-            test_datasets,
+            test_dataset,
             batch_size=config.algo.batch_size,
             drop_last=False,
             num_workers=config.data.num_workers,

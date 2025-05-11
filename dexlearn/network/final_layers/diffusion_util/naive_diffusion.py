@@ -10,7 +10,6 @@ from diffusers.schedulers.scheduling_euler_ancestral_discrete import (
 )
 import math
 
-from .manifold import jacobian_trace
 from .diff_mlp import MLP
 
 # constants
@@ -18,6 +17,18 @@ from .diff_mlp import MLP
 # ModelPrediction =  namedtuple('ModelPrediction', ['pred_noise', 'pred_x_start'])
 
 # helpers functions
+
+
+def jacobian_trace(log_prob_type, dx, dy):
+    if log_prob_type == "accurate_cont":
+        # time consuming
+        jacobian_mat = jacobian_matrix(dy, dx)
+        return jacobian_mat.diagonal(dim1=-1, dim2=-2).sum(dim=-1)
+    elif log_prob_type == "estimate":
+        # quick
+        return approx_jacobian_trace(dy, dx)
+    else:
+        return 0
 
 
 def exists(x):

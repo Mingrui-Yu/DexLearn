@@ -8,10 +8,10 @@ from omegaconf import OmegaConf, DictConfig
 from tqdm import tqdm
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from dexgrasp.utils.logger import Logger
-from dexgrasp.utils.util import set_seed
-from dexgrasp.dataset import create_test_dataloader
-from dexgrasp.network.models import *
+from dexlearn.utils.logger import Logger
+from dexlearn.utils.util import set_seed
+from dexlearn.dataset import create_test_dataloader
+from dexlearn.network.models import *
 
 
 def main_func(config: DictConfig) -> None:

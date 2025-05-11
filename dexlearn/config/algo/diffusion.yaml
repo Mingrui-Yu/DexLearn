@@ -24,7 +24,7 @@ model:
   head:
     name: FlowRT_MLPRTJ
     in_feat_dim:
-    joint_num:  ${....hand.joint_num}
+    joint_num:  ${....data.joint_num}
     traj_length: ${....data.traj_length}
     diffusion:
       ode: 1

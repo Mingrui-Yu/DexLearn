@@ -6,3 +6,5 @@ __pycache__/
 
 debug*
 output*
+*.tar.bz2
+assets/

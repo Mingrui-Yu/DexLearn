@@ -25,7 +25,7 @@ model:
     name: FlowRT_MLPRTJ
     in_feat_dim:
     kp_dim: 84
-    joint_num:  ${....hand.joint_num}
+    joint_num:  ${....data.joint_num}
     traj_length: ${....data.traj_length}
     mobius:
       layer: 24

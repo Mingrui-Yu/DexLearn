@@ -3,9 +3,9 @@ from einops import rearrange, repeat
 
 from .diffusion_util import MLPWrapper, GaussianDiffusion1D
 from .mlp import BasicMLP
-from dexgrasp.utils.rot import proper_svd
+from dexlearn.utils.rot import proper_svd
 from pytorch3d import transforms as pttf
-from dexgrasp.utils.RMS import Normalization
+from dexlearn.utils.RMS import Normalization
 
 
 class DiffusionRTJ(torch.nn.Module):
