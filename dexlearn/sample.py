@@ -49,26 +49,15 @@ def main_func(config: DictConfig) -> None:
             )
             robot_pose = robot_pose[batch_indices, topk_indices]
             log_prob = log_prob[batch_indices, topk_indices]
-            if config.algo.model.head.name.endswith("KP"):
-                save_dict = {
-                    "pregrasp_kp": robot_pose[..., 0, :, :],
-                    "grasp_kp": robot_pose[..., 1, :, :],
-                    "squeeze_kp": robot_pose[..., 2, :, :],
-                    "grasp_error": -log_prob,
-                }
-            else:
-                pregrasp_qpos = robot_pose[..., 0, :]
-                grasp_qpos = robot_pose[..., 1, :]
-                squeeze_qpos = robot_pose[..., 2, :]
-                save_dict = {
-                    "pregrasp_qpos": pregrasp_qpos,
-                    "grasp_qpos": grasp_qpos,
-                    "squeeze_qpos": squeeze_qpos,
-                    "grasp_error": -log_prob,
-                }
 
-            for k in ["obj_path", "obj_pose", "obj_scale"]:
-                save_dict[k] = data[k]
+            save_dict = {
+                "pregrasp_qpos": robot_pose[..., 0, :],
+                "grasp_qpos": robot_pose[..., 1, :],
+                "squeeze_qpos": robot_pose[..., 2, :],
+                "grasp_error": -log_prob,
+                "scene_cfg": data["scene_cfg"],
+            }
+
             logger.save_samples(save_dict, ckpt_iter, data["save_path"])
 
     return
@@ -90,9 +79,7 @@ if __name__ == "__main__":
     sys.argv = (
         sys.argv[:1]
         + unknown
-        + list(
-            OmegaConf.load(f"output/experiment/{args.exp_name}/.hydra/overrides.yaml")
-        )
+        + list(OmegaConf.load(f"output/{args.exp_name}/.hydra/overrides.yaml"))
     )
 
     # remove duplicated args. Note: cmd has the priority!

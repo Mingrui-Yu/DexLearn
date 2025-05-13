@@ -4,7 +4,8 @@ num_points: 1024
 traj_length: 3
 joint_num: 22
 pose_aug: False
-grasp_type_lst: ["6_Prismatic_4_Finger"]
+grasp_type_lst: ["1_Large_Diameter"]
+grasp_type_cond: True
 
 grasp_path: ${data_folder}/grasp/Dexonomy_GRASP_shadow/succgrasp
 object_path: 
@@ -15,5 +16,5 @@ pc_path: vision_data/azure_kinect    # relative to object_path
 
 
 test_split: test
-test_scene_cfg: scene_cfg/floating
-mini_test: True
+test_scene_cfg: scene_cfg/floating/**.npy
+mini_test: False

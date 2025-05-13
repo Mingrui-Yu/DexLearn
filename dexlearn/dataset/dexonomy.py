@@ -68,12 +68,14 @@ class DexonomyDataset(Dataset):
         if self.config.mini_test:
             self.obj_id_lst = self.obj_id_lst[:100]
         for o in self.obj_id_lst:
-            self.test_cfg_lst.append(
-                pjoin(
-                    self.config.object_path,
-                    "processed_data",
-                    o,
-                    self.config.test_scene_cfg,
+            self.test_cfg_lst.extend(
+                glob(
+                    pjoin(
+                        self.config.object_path,
+                        "processed_data",
+                        o,
+                        self.config.test_scene_cfg,
+                    )
                 )
             )
         self.data_num = self.grasp_type_num * len(self.test_cfg_lst)
@@ -165,14 +167,19 @@ class DexonomyDataset(Dataset):
             pc = raw_pc[idx] / pc_scale * object_scale
 
             ret_dict["save_path"] = pjoin(
-                rand_grasp_type,
-                scene_cfg["scene_id"],
-                f"{os.path.basename(pc_path)}.npy",
+                rand_grasp_type, scene_cfg["scene_id"], os.path.basename(pc_path)
             )
+            for k, v in scene_cfg["scene"][obj_name].items():
+                if k.endswith("_path"):
+                    scene_cfg["scene"][obj_name][k] = os.path.join(
+                        os.path.dirname(cfg_path), v
+                    )
             ret_dict["scene_cfg"] = scene_cfg
 
         ret_dict["point_clouds"] = pc  # (N, 3)
-        ret_dict["grasp_type_id"] = int(rand_grasp_type.split("_")[0])
+        ret_dict["grasp_type_id"] = (
+            int(rand_grasp_type.split("_")[0]) if self.config.grasp_type_cond else 0
+        )
         if self.sc_voxel_size is not None:
             ret_dict["coors"] = pc / self.sc_voxel_size  # (N, 3)
             ret_dict["feats"] = pc  # (N, 3)

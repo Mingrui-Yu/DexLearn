@@ -22,7 +22,7 @@ model:
     out_feat_dim: 128
     disabled: False
   head:
-    name: FlowRT_MLPRTJ
+    name: DiffusionRT_MLPRTJ
     in_feat_dim:
     joint_num:  ${....data.joint_num}
     traj_length: ${....data.traj_length}

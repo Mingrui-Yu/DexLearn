@@ -1,4 +1,4 @@
-output_folder: ../output
+output_folder: output
 data_folder: assets
 exp_name: debug
 ckpt:       # ckpt path to load
@@ -21,7 +21,7 @@ algo_name: ${hydra:runtime.choices.algo}
 
 hydra:
   run:
-    dir: ${...output_folder}/${...data_name}_${...exp_name}
+    dir: ${...output_folder}/${...data_name}_${...algo_name}_${...exp_name}
     
 
 ##########################
@@ -29,8 +29,8 @@ hydra:
 ##########################
 wandb:
   folder: ${output_folder}
-  group: ${data_name}
-  id: ${data_name}_${exp_name}
+  group: ${algo_name}
+  id: ${data_name}_${algo_name}_${exp_name}
   mode: online
   project: DexGraspLearn
   resume: ${resume}

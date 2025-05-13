@@ -8,6 +8,7 @@ import torch
 from copy import deepcopy
 
 from .dexonomy import DexonomyDataset
+from .bodex import BODexDataset
 
 
 def create_dataset(config, mode):
@@ -130,25 +131,36 @@ class FiniteLoader:
 
 # some magic to get MinkowskiEngine sparse tensor
 def minkowski_collate_fn(list_data):
-    if "coors" not in list_data[0].keys():
-        return default_collate(list_data)
+    scene_cfg_data = None
+    if "scene_cfg" in list_data[0].keys():
+        scene_cfg_data = [d.pop("scene_cfg") for d in list_data]
 
-    coors_data = [d.pop("coors") for d in list_data]
-    feats_data = [d.pop("feats") for d in list_data]
-    coordinates_batch, features_batch = ME.utils.sparse_collate(coors_data, feats_data)
-    coordinates_batch, features_batch, original2quantize, quantize2original = (
-        ME.utils.sparse_quantize(
-            coordinates_batch,
-            features_batch,
-            return_index=True,
-            return_inverse=True,
+    coors_data = None
+    if "coors" in list_data[0].keys():
+        coors_data = [d.pop("coors") for d in list_data]
+        feats_data = [d.pop("feats") for d in list_data]
+        coordinates_batch, features_batch = ME.utils.sparse_collate(
+            coors_data, feats_data
         )
-    )
+        coordinates_batch, features_batch, original2quantize, quantize2original = (
+            ME.utils.sparse_quantize(
+                coordinates_batch,
+                features_batch,
+                return_index=True,
+                return_inverse=True,
+            )
+        )
+
     res = default_collate(list_data)
-    res["coors"] = coordinates_batch
-    res["feats"] = features_batch
-    res["original2quantize"] = original2quantize
-    res["quantize2original"] = quantize2original
+
+    if scene_cfg_data is not None:
+        res["scene_cfg"] = scene_cfg_data
+
+    if coors_data is not None:
+        res["coors"] = coordinates_batch
+        res["feats"] = features_batch
+        res["original2quantize"] = original2quantize
+        res["quantize2original"] = quantize2original
     return res
 
 
