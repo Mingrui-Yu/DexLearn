@@ -49,12 +49,21 @@ class Logger:
 
     def save_samples(self, dic: dict, step: int, save_path: list):
         for i, suffix in enumerate(save_path):
-            save_dict = {}
-            for k, v in dic.items():
-                if type(v).__module__ == "torch":
-                    save_dict[k] = v[i].detach().cpu().numpy()
-                else:
-                    save_dict[k] = v[i]
             path = pjoin(self.save_test_dir, f"step_{str(step).zfill(6)}", suffix)
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            np.save(path, save_dict)
+            for k, v in dic.items():
+                if type(v).__module__ == "torch":
+                    torch_key = k
+                    break
+
+            for j in range(dic[torch_key].shape[1]):
+                save_dict = {}
+                for k, v in dic.items():
+                    if type(v).__module__ == "torch":
+                        save_dict[k] = v[i, j].detach().cpu().numpy()
+                    elif k == "scene_path":
+                        save_dict[k] = v[i]
+                    else:
+                        raise NotImplementedError
+                path_j = path.split(".npy")[0] + f"_{j}.npy"
+                np.save(path_j, save_dict)

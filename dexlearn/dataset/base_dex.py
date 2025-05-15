@@ -7,10 +7,10 @@ import numpy as np
 from torch.utils.data import Dataset
 
 from dexlearn.utils.rot import numpy_quaternion_to_matrix
-from dexlearn.utils.util import load_json
+from dexlearn.utils.util import load_json, load_scene_cfg
 
 
-class DexonomyDataset(Dataset):
+class DexDataset(Dataset):
     def __init__(self, config: dict, mode: str, sc_voxel_size: float = None):
         self.config = config
         self.sc_voxel_size = sc_voxel_size
@@ -42,9 +42,8 @@ class DexonomyDataset(Dataset):
             for obj_id in self.obj_id_lst:
                 obj_grasp_data = len(
                     glob(
-                        pjoin(
-                            self.config.grasp_path, grasp_type, f"{obj_id}**", "**.npy"
-                        )
+                        pjoin(self.config.grasp_path, grasp_type, obj_id, "**/**.npy"),
+                        recursive=True,
                     )
                 )
                 if obj_grasp_data == 0:
@@ -72,7 +71,7 @@ class DexonomyDataset(Dataset):
                 glob(
                     pjoin(
                         self.config.object_path,
-                        "processed_data",
+                        "scene_cfg",
                         o,
                         self.config.test_scene_cfg,
                     )
@@ -97,43 +96,41 @@ class DexonomyDataset(Dataset):
             rand_obj_id = random.choice(grasp_obj_lst)
             grasp_npy_lst = glob(
                 pjoin(
-                    self.config.grasp_path,
-                    rand_grasp_type,
-                    f"{rand_obj_id}**",
-                    "**.npy",
-                )
+                    self.config.grasp_path, rand_grasp_type, rand_obj_id, "**/**.npy"
+                ),
+                recursive=True,
             )
             grasp_path = random.choice(sorted(grasp_npy_lst))
             grasp_data = np.load(grasp_path, allow_pickle=True).item()
+
             robot_pose = np.stack(
                 [
                     grasp_data["pregrasp_qpos"],
                     grasp_data["grasp_qpos"],
                     grasp_data["squeeze_qpos"],
                 ],
-                axis=0,
-            )[
-                None
-            ]  # 1, 3, 29
+                axis=-2,
+            )
+            if len(robot_pose.shape) == 3:
+                rand_pose_id = np.random.randint(robot_pose.shape[0])
+                robot_pose = robot_pose[rand_pose_id : rand_pose_id + 1]  # 1, 3, J
+            else:
+                raise NotImplementedError
+
+            scene_cfg = load_scene_cfg(grasp_data["scene_path"])
 
             # read point cloud
             pc_path_lst = glob(
-                pjoin(
-                    self.object_pc_folder,
-                    grasp_data["scene_cfg"]["scene_id"],
-                    "**/partial_pc**.npy",
-                ),
-                recursive=True,
+                pjoin(self.object_pc_folder, scene_cfg["scene_id"], "partial_pc**.npy")
             )
             pc_path = random.choice(sorted(pc_path_lst))
             raw_pc = np.load(pc_path, allow_pickle=True)
             idx = np.random.choice(
                 raw_pc.shape[0], self.config.num_points, replace=True
             )
-            obj_name = grasp_data["scene_cfg"]["task"]["obj_name"]
-            object_scale = grasp_data["scene_cfg"]["scene"][obj_name]["scale"]
-            pc_scale = float(pc_path.split("scale")[1].split("/")[0]) / 100
-            pc = raw_pc[idx] / pc_scale * object_scale
+            pc = raw_pc[idx]
+            if "scene_scale" in grasp_data:
+                pc *= grasp_data["scene_scale"][rand_pose_id]
 
             ret_dict["hand_trans"] = robot_pose[:, :, :3]  # (K, n, 3)
             ret_dict["hand_rot"] = numpy_quaternion_to_matrix(
@@ -143,38 +140,24 @@ class DexonomyDataset(Dataset):
 
         elif self.mode == "test":
             rand_grasp_type = self.grasp_type_lst[id // len(self.test_cfg_lst)]
-            cfg_path = self.test_cfg_lst[id % len(self.test_cfg_lst)]
-            scene_cfg = np.load(cfg_path, allow_pickle=True).item()
-
-            obj_name = scene_cfg["task"]["obj_name"]
-            object_scale = scene_cfg["scene"][obj_name]["scale"]
+            scene_path = self.test_cfg_lst[id % len(self.test_cfg_lst)]
+            scene_cfg = load_scene_cfg(scene_path)
 
             # read point cloud
             pc_path_lst = glob(
-                pjoin(
-                    self.object_pc_folder,
-                    scene_cfg["scene_id"],
-                    "**/partial_pc**.npy",
-                ),
-                recursive=True,
+                pjoin(self.object_pc_folder, scene_cfg["scene_id"], "partial_pc**.npy"),
             )
             pc_path = random.choice(sorted(pc_path_lst))
             raw_pc = np.load(pc_path, allow_pickle=True)
             idx = np.random.choice(
                 raw_pc.shape[0], self.config.num_points, replace=True
             )
-            pc_scale = float(pc_path.split("scale")[1].split("/")[0]) / 100
-            pc = raw_pc[idx] / pc_scale * object_scale
+            pc = raw_pc[idx]
 
             ret_dict["save_path"] = pjoin(
                 rand_grasp_type, scene_cfg["scene_id"], os.path.basename(pc_path)
             )
-            for k, v in scene_cfg["scene"][obj_name].items():
-                if k.endswith("_path"):
-                    scene_cfg["scene"][obj_name][k] = os.path.join(
-                        os.path.dirname(cfg_path), v
-                    )
-            ret_dict["scene_cfg"] = scene_cfg
+            ret_dict["scene_path"] = scene_path
 
         ret_dict["point_clouds"] = pc  # (N, 3)
         ret_dict["grasp_type_id"] = (

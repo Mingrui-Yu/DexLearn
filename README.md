@@ -1,7 +1,12 @@
-# DexGraspLearn
+# DexLearn
 
-Learning-based grasp synthesis baselines (e.g., regression, cvae, diffusion policy, normalizing flow) for dexterous hands, used in [BODex (ICRA 2025)](https://pku-epic.github.io/BODex/) and [Dexonomy (RSS 2025)](https://pku-epic.github.io/Dexonomy/)
+Learning-based grasp synthesis baselines (e.g., diffusion model and normalizing flow) for dexterous hands, used in [BODex (ICRA 2025)](https://pku-epic.github.io/BODex/) and [Dexonomy (RSS 2025)](https://pku-epic.github.io/Dexonomy/)
 
+
+## TODO list
+
+- [x] Support BODex and Dexonomy datasets
+- [ ] Release grasp type classifier for Dexonomy
 
 ## Installation
 ```bash
@@ -39,28 +44,34 @@ cd ...
 pip install -e .
 ```
 
-## Quick Start
-1. Prepare object and grasp pose assets. Download from [hugging face](https://huggingface.co/datasets/JiayiChenPKU/Dexonomy). The folder should be organized as below:
+## Getting Started
+1. **Prepare assets**. Download Dexonomy dataset from [Hugging Face](https://huggingface.co/datasets/JiayiChenPKU/Dexonomy). The folder should be organized as below:
 ```
-DexGraspLearn/assets
+DexLearn/assets
 |- grasp
 |   |_ Dexonomy_GRASP_shadow
-|        |_ succgrasp
+|        |_ succ_collect
 |_ object
     |- DGN_5k
     |   |- valid_split
     |   |- processed_data
+    |   |- scene_cfg
     |   |_ vision_data
     |_ objaverse_5k
         |- valid_split
         |- processed_data
+    |   |- scene_cfg
         |_ vision_data
 ```
+Similarly, you can download BODex dataset from [Hugging Face](https://huggingface.co/datasets/JiayiChenPKU/BODex). 
 
-2. Running. 
+2. **Running**. 
 ```bash
-CUDA_VISIBLE_DEVICES=4 python -m dexlearn.train exp_name=first
+CUDA_VISIBLE_DEVICES=0 python -m dexlearn.train exp_name=type1 algo=nflow data=dexonomy_shadow
+CUDA_VISIBLE_DEVICES=0 python -m dexlearn.sample -e dexonomy_shadow_nflow_type1       
 ```
+
+3. **Evaluating in simulation**: Please see [DexGraspBench](https://github.com/JYChen18/DexGraspBench?tab=readme-ov-file#running)
 
 ## License
 

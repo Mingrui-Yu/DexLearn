@@ -7,8 +7,7 @@ import MinkowskiEngine as ME
 import torch
 from copy import deepcopy
 
-from .dexonomy import DexonomyDataset
-from .bodex import BODexDataset
+from .base_dex import DexDataset
 
 
 def create_dataset(config, mode):
@@ -22,12 +21,10 @@ def create_dataset(config, mode):
         for p in config.data.object_path:
             new_data_config = deepcopy(config.data)
             new_data_config.object_path = p
-            dataset_lst.append(
-                eval(f"{config.data_name}Dataset")(new_data_config, mode, sp_voxel_size)
-            )
+            dataset_lst.append(DexDataset(new_data_config, mode, sp_voxel_size))
         dataset = torch.utils.data.ConcatDataset(dataset_lst)
     else:
-        dataset = eval(f"{config.data_name}Dataset")(config.data, mode, sp_voxel_size)
+        dataset = DexDataset(config.data, mode, sp_voxel_size)
     return dataset
 
 
@@ -131,9 +128,9 @@ class FiniteLoader:
 
 # some magic to get MinkowskiEngine sparse tensor
 def minkowski_collate_fn(list_data):
-    scene_cfg_data = None
-    if "scene_cfg" in list_data[0].keys():
-        scene_cfg_data = [d.pop("scene_cfg") for d in list_data]
+    scene_path_data = None
+    if "scene_path" in list_data[0].keys():
+        scene_path_data = [d.pop("scene_path") for d in list_data]
 
     coors_data = None
     if "coors" in list_data[0].keys():
@@ -153,8 +150,8 @@ def minkowski_collate_fn(list_data):
 
     res = default_collate(list_data)
 
-    if scene_cfg_data is not None:
-        res["scene_cfg"] = scene_cfg_data
+    if scene_path_data is not None:
+        res["scene_path"] = scene_path_data
 
     if coors_data is not None:
         res["coors"] = coordinates_batch

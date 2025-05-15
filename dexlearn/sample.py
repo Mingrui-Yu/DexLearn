@@ -55,7 +55,7 @@ def main_func(config: DictConfig) -> None:
                 "grasp_qpos": robot_pose[..., 1, :],
                 "squeeze_qpos": robot_pose[..., 2, :],
                 "grasp_error": -log_prob,
-                "scene_cfg": data["scene_cfg"],
+                "scene_path": data["scene_path"],
             }
 
             logger.save_samples(save_dict, ckpt_iter, data["save_path"])
