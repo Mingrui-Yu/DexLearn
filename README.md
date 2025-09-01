@@ -71,6 +71,15 @@ CUDA_VISIBLE_DEVICES=0 python -m dexlearn.train exp_name=type1 algo=nflow data=d
 CUDA_VISIBLE_DEVICES=0 python -m dexlearn.sample -e dexonomy_shadow_nflow_type1       
 ```
 
+```bash
+# from mingrui
+
+# train
+CUDA_VISIBLE_DEVICES=x python -m dexlearn.train exp_name=debugx algo=nflow data=bodex_tabletop_xxx
+# test
+CUDA_VISIBLE_DEVICES=x python -m dexlearn.sample -e bodex_tabletop_xxx_nflow_debugx
+```
+
 3. **Evaluating in simulation**: Please see [DexGraspBench](https://github.com/JYChen18/DexGraspBench?tab=readme-ov-file#running)
 
 ## License

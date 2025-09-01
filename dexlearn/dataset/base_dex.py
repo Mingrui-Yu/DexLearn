@@ -9,6 +9,8 @@ from torch.utils.data import Dataset
 from dexlearn.utils.rot import numpy_quaternion_to_matrix
 from dexlearn.utils.util import load_json, load_scene_cfg
 
+import pdb
+
 
 class DexDataset(Dataset):
     def __init__(self, config: dict, mode: str, sc_voxel_size: float = None):
@@ -158,6 +160,13 @@ class DexDataset(Dataset):
                 rand_grasp_type, scene_cfg["scene_id"], os.path.basename(pc_path)
             )
             ret_dict["scene_path"] = scene_path
+
+        # Move the pointcloud centroid to the origin. Move the robot pose accordingly.
+        if self.config.pc_centering:
+            pc_centroid = np.mean(pc, axis=-2, keepdims=True)
+            pc = pc - pc_centroid # normalization
+            if self.mode != "test":
+                ret_dict["hand_trans"] = ret_dict["hand_trans"] - pc_centroid[None, :, :]
 
         ret_dict["point_clouds"] = pc  # (N, 3)
         ret_dict["grasp_type_id"] = (
